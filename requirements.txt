@@ -1,0 +1,4 @@
+gradio>=6.0.0.dev0
+httpx
+vertexai
+google-adk>=1.16.0
