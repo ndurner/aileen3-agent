@@ -18,7 +18,7 @@ def _build_settings_accordion() -> tuple[
     """
     Returns controls for overriding backend settings at runtime and a state object for session id.
     """
-    with gr.Accordion("Settings", open=False):
+    with gr.Accordion("Technical settings", open=False):
         backend_kind = gr.Dropdown(
             label="Backend",
             choices=[BackendKind.API_SERVER.value, BackendKind.AGENT_ENGINE.value],
