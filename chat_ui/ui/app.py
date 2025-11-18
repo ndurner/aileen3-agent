@@ -13,7 +13,19 @@ _base_config = load_config()
 
 
 def _build_settings_accordion() -> tuple[
-    gr.Dropdown, gr.Textbox, gr.Textbox, gr.Textbox, gr.Textbox, gr.Textbox, gr.Textbox, gr.State
+    gr.Dropdown,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.Textbox,
+    gr.State,
 ]:
     """
     Returns controls for overriding backend settings at runtime and a state object for session id.
@@ -51,8 +63,49 @@ def _build_settings_accordion() -> tuple[
             label="Default User ID",
             value=_base_config.default_user_id,
         )
+
+    with gr.Accordion("Briefing", open=True):
+        media_url = gr.Textbox(
+            label="Media URL",
+            placeholder="https://youtube.com/...",
+        )
+        context = gr.Textbox(
+            label="Context (scene setting)",
+            placeholder="People, venue, goal, spelled names or acronyms you already provided",
+            lines=3,
+        )
+        expectations = gr.Textbox(
+            label="Expectations (anticipated insights)",
+            placeholder="Facts or takeaways you expect—only what you've already stated",
+            lines=3,
+        )
+        prior_knowledge = gr.Textbox(
+            label="Prior Knowledge (what you already know)",
+            placeholder="Acronyms, previous meetings, background you mentioned",
+            lines=3,
+        )
+        questions = gr.Textbox(
+            label="Questions to Answer",
+            placeholder="Specific questions you've supplied for this chat",
+            lines=3,
+        )
+
     session_state = gr.State(value=None)
-    return backend_kind, api_url, api_app, project_id, location, ae_name, default_user, session_state
+    return (
+        backend_kind,
+        api_url,
+        api_app,
+        project_id,
+        location,
+        ae_name,
+        default_user,
+        media_url,
+        context,
+        expectations,
+        prior_knowledge,
+        questions,
+        session_state,
+    )
 
 
 def _override_config(
@@ -93,6 +146,11 @@ async def chat_fn(
     location: str,
     ae_name: str,
     default_user: str,
+    media_url: str,
+    context: str,
+    expectations: str,
+    prior_knowledge: str,
+    questions: str,
 ) -> Tuple[ChatMessage, str | None]:
     config = _override_config(backend_kind, api_url, api_app, project_id, location, ae_name, default_user)
     active_backend = make_backend(config)
@@ -102,8 +160,20 @@ async def chat_fn(
     user_id = config.default_user_id
     rets = []
 
+    session_state_payload = {
+        "user_media_url": media_url or "",
+        "user_context": context or "",
+        "user_expectations": expectations or "",
+        "user_prior_knowledge": prior_knowledge or "",
+        "user_questions": questions or "",
+    }
+
     try:
-        session_id = await active_backend.ensure_session(user_id=user_id, existing_session_id=session_id)
+        session_id = await active_backend.ensure_session(
+            user_id=user_id,
+            existing_session_id=session_id,
+            session_state=session_state_payload,
+        )
         async for event in active_backend.stream_events(user_id=user_id, session_id=session_id, message=user_text):
             ret = decode_event(event)
             if ret:
@@ -126,6 +196,11 @@ def build_app() -> gr.Blocks:
             location,
             ae_name,
             default_user,
+            media_url,
+            context,
+            expectations,
+            prior_knowledge,
+            questions,
             session_state,
         ) = _build_settings_accordion()
 
@@ -141,6 +216,11 @@ def build_app() -> gr.Blocks:
                 location,
                 ae_name,
                 default_user,
+                media_url,
+                context,
+                expectations,
+                prior_knowledge,
+                questions,
             ],
             additional_outputs=[session_state],
         )

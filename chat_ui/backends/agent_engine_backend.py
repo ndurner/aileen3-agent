@@ -27,11 +27,12 @@ class AgentEngineBackend(AgentBackend):
         self,
         user_id: str,
         existing_session_id: str | None,
+        session_state: dict[str, str],
     ) -> str:
         if existing_session_id:
             return existing_session_id
 
-        session = await self._adk_app.async_create_session(user_id=user_id)
+        session = await self._adk_app.async_create_session(user_id=user_id, state=session_state)
         return session["id"]
 
     async def stream_events(

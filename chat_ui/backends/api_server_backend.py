@@ -18,6 +18,7 @@ class ApiServerBackend(AgentBackend):
         self,
         user_id: str,
         existing_session_id: str | None,
+        session_state: dict[str, str],
     ) -> str:
         if existing_session_id:
             return existing_session_id
@@ -26,7 +27,7 @@ class ApiServerBackend(AgentBackend):
         url = f"{base}/apps/{self.config.app_name}/users/{user_id}/sessions"
 
         async with httpx.AsyncClient(timeout=None) as client:
-            response = await client.post(url, json={})
+            response = await client.post(url, json={"state": session_state})
             response.raise_for_status()
             data = response.json()
 

@@ -10,6 +10,7 @@ class AgentBackend(ABC):
         self,
         user_id: str,
         existing_session_id: str | None,
+        session_state: dict[str, str],
     ) -> str:
         """Return a session id, creating one if needed."""
 
