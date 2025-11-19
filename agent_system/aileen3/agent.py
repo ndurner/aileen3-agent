@@ -1,8 +1,9 @@
 from google.adk.agents.llm_agent import Agent
+from google.adk.agents.sequential_agent import SequentialAgent
 
-root_agent = Agent(
+assi_agent = Agent(
     model='gemini-2.5-flash-lite',
-    name='root_agent',
+    name='assi_agent',
     description='A helpful assistant for user questions named `Aileen`.',
     instruction="""Answer user questions to the best of your knowledge.
 
@@ -26,4 +27,9 @@ Use the user briefing below to ground names, context, expectations, and question
 ```
 ~~~
 """,
+)
+
+root_agent = SequentialAgent(
+    name = 'root_agent',
+    sub_agents= [assi_agent]
 )
