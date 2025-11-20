@@ -9,23 +9,23 @@ assi_agent = Agent(
 
 Use the user briefing below to ground names, context, expectations, and questions. Treat empty blocks as not provided by the user.
 
-~~~ User input
-```Media URL
+<original_user_briefing>
+    <media_url>
 {user_media_url}
-```
-```Context
+    </media_url>
+    <context>
 {user_context}
-```
-```Expectations
+    </context>
+    <expectation>
 {user_expectations}
-```
-```Prior Knowledge
+    <expectation>
+    <prior_knowledge>
 {user_prior_knowledge}
-```
-```Questions
+    </prior_knowledge>
+    <questions>
 {user_questions}
-```
-~~~
+    </questions>
+</original_user_briefing>
 """,
 )
 
