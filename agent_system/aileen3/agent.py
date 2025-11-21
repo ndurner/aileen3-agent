@@ -82,11 +82,12 @@ Your goals are:
 2) Preserve the user's intent and meaning.
 3) Do not add new information.
 
+Return only the corrected user message text (in the desired XML return format), with no extra commentary.
+
+Desired return format:
 <latest_user_message>
 {latest_user_message}
 </latest_user_message>
-
-Return only the corrected user message text, with no extra commentary.
 """,
     output_key="normalized_user_message",
 )
