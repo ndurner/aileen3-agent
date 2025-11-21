@@ -71,3 +71,20 @@ class ApiServerBackend(AgentBackend):
                     except json.JSONDecodeError:
                         continue
                     yield event
+
+    async def delete_session(
+        self,
+        user_id: str,
+        session_id: str,
+    ) -> None:
+        if not session_id:
+            return
+
+        base = self.config.base_url.rstrip("/")
+        url = f"{base}/apps/{self.config.app_name}/users/{user_id}/sessions/{session_id}"
+
+        async with httpx.AsyncClient(timeout=None) as client:
+            response = await client.delete(url)
+            # Treat missing sessions as already-deleted; raise for other errors.
+            if response.status_code not in (200, 204, 404):
+                response.raise_for_status()

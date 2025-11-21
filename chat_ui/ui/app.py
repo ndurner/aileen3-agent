@@ -185,6 +185,35 @@ async def chat_fn(
     yield rets, session_id
 
 
+async def clear_session_fn(
+    backend_kind: str,
+    api_url: str,
+    api_app: str,
+    project_id: str,
+    location: str,
+    ae_name: str,
+    default_user: str,
+    session_id: str | None,
+) -> str | None:
+    """
+    Clear the backend session (if any) and reset the stored session id.
+    """
+    if session_id:
+        config = _override_config(backend_kind, api_url, api_app, project_id, location, ae_name, default_user)
+        active_backend = make_backend(config)
+
+        user_id = config.default_user_id
+        try:
+            await active_backend.delete_session(user_id=user_id, session_id=session_id)
+        except Exception:
+            # If deletion fails, we still forget the session id locally so the next
+            # turn will use a fresh session.
+            pass
+
+    # Forget the session id so the next turn starts fresh.
+    return None
+
+
 def build_app() -> gr.Blocks:
     with gr.Blocks() as demo:
         # Remove undo/redo buttons from chatbot
@@ -214,6 +243,22 @@ def build_app() -> gr.Blocks:
             questions,
             session_state,
         ) = _build_settings_accordion()
+
+        # When the built-in trash icon is clicked, delete/reset the backend session id.
+        chatbot.clear(
+            fn=clear_session_fn,
+            inputs=[
+                backend_kind,
+                api_url,
+                api_app,
+                project_id,
+                location,
+                ae_name,
+                default_user,
+                session_state,
+            ],
+            outputs=[session_state],
+        )
 
         gr.ChatInterface(
             fn=chat_fn,
