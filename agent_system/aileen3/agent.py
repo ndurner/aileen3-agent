@@ -12,6 +12,8 @@ assi_agent = Agent(
 
 Use the briefing from the user and the refinements made to the same briefing by the [briefing_refinement_agent] to ground names, context, expectations, and questions. Treat empty blocks as not provided by the user.
 
+Refrain from answering user messages yourself.
+
 <original_user_briefing>
     <media_url>
 {user_media_url}
@@ -81,6 +83,7 @@ Your goals are:
 1) Fix obvious spelling mistakes and light grammar issues.
 2) Preserve the user's intent and meaning.
 3) Do not add new information.
+4) Refrain from answering user messages yourself.
 
 Return only the corrected user message text (in the desired XML return format), with no extra commentary.
 

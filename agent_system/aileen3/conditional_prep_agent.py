@@ -6,6 +6,10 @@ from google.adk.agents.base_agent import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.events import Event
+from google.genai import types as genai_types
+
+_AGENT_OUTPUT_PREFIX = "<agent_output>"
+_AGENT_OUTPUT_SUFFIX = "</agent_output>"
 
 
 class ConditionalPrepAgent(BaseAgent):
@@ -45,12 +49,15 @@ class ConditionalPrepAgent(BaseAgent):
 
         # 1) Run briefing refinement only once per session.
         has_refined_briefing = "briefing_refined" in state_dict
+
         if not has_refined_briefing:
             # Run the underlying LlmAgent once to refine the briefing.
             # We *must* forward its events so that ADK can apply the
             # output_key-based state update and, if desired, surface
             # the content in the transcript.
-            async for event in self.briefing_agent.run_async(ctx):
+            async for event in self._wrap_with_xml_markers(
+                self.briefing_agent.run_async(ctx)
+            ):
                 yield event
 
         # 2) On every invocation, normalize the latest user message.
@@ -69,8 +76,48 @@ class ConditionalPrepAgent(BaseAgent):
             state["latest_user_message"] = user_text
             # Forward message-fix events as well so its output_key
             # (`normalized_user_message`) is applied and visible.
-            async for event in self.message_agent.run_async(ctx):
+            async for event in self._wrap_with_xml_markers(
+                self.message_agent.run_async(ctx)
+            ):
                 yield event
 
         # If neither sub-agent produced events, this agent yields nothing.
 
+    # XML markers ensure that the Gradio frontend will not render stray
+    # agent outputs that were not intended to be passed on to the frontend
+    async def _wrap_with_xml_markers(
+        self,
+        events: AsyncGenerator[Event, None],
+    ) -> AsyncGenerator[Event, None]:
+        """Inject prefix/suffix markers into the first/last events."""
+        buffered_event: Event | None = None
+        first_event = True
+
+        async for event in events:
+            event = self._ensure_text_content(event)
+            if first_event:
+                self._prepend_text(event, _AGENT_OUTPUT_PREFIX)
+                first_event = False
+            if buffered_event is not None:
+                yield buffered_event
+            buffered_event = event
+
+        if buffered_event is not None:
+            self._append_text(buffered_event, _AGENT_OUTPUT_SUFFIX)
+            yield buffered_event
+
+    def _ensure_text_content(self, event: Event) -> Event:
+        """Guarantee the event has a mutable text content we can annotate."""
+        if event.content is None:
+            event.content = genai_types.Content(role="model", parts=[])
+        elif event.content.parts is None:
+            event.content.parts = []
+        return event
+
+    def _prepend_text(self, event: Event, text: str) -> None:
+        """Add a text part to the start of the event."""
+        event.content.parts.insert(0, genai_types.Part(text=text))
+
+    def _append_text(self, event: Event, text: str) -> None:
+        """Add a text part to the end of the event."""
+        event.content.parts.append(genai_types.Part(text=text))
