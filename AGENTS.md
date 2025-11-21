@@ -10,3 +10,6 @@
 - Keep modules small: UI work in `chat_ui/ui/*`, transport in `chat_ui/backends/*`, config in `chat_ui/config.py`.
 - Use descriptive snake_case for variables and functions; keep Gradio component builders prefixed with `_build_*`, backend factories in `make_backend`.
 - No repo formatter pinned; if you use `ruff`/`black`, run locally and avoid unrelated churn.
+
+## Terminology
+- "ADK" in this context refers to the Google Agent Development Kit
