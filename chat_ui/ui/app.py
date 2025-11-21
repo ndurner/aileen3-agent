@@ -187,6 +187,17 @@ async def chat_fn(
 
 def build_app() -> gr.Blocks:
     with gr.Blocks() as demo:
+        # Remove undo/redo buttons from chatbot
+        gr.HTML("""
+                <style>
+                    button[aria-label*="undo" i],
+                    button[title*="undo" i],
+                    button[aria-label*="retry" i],
+                    button[title*="retry" i] {
+                        display: none !important;
+                    }
+                </style>
+                """)
         chatbot = gr.Chatbot(label="Aileen3 Chat", render_markdown=True)
         (
             backend_kind,
