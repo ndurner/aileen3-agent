@@ -13,3 +13,6 @@
 
 ## Terminology
 - "ADK" in this context refers to the Google Agent Development Kit
+
+## Environment
+- activate the .venv venv
