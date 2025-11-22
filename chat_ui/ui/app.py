@@ -151,14 +151,14 @@ async def chat_fn(
     expectations: str,
     prior_knowledge: str,
     questions: str,
-) -> Tuple[ChatMessage, str | None]:
+) -> Tuple[str, str]:
     config = _override_config(backend_kind, api_url, api_app, project_id, location, ae_name, default_user)
     active_backend = make_backend(config)
 
     user_text = str(message.content if isinstance(message, ChatMessage) else message)
 
     user_id = config.default_user_id
-    rets = []
+    rets: str = ""
 
     session_state_payload = {
         "user_media_url": media_url or "",
@@ -177,7 +177,7 @@ async def chat_fn(
         async for event in active_backend.stream_events(user_id=user_id, session_id=session_id, message=user_text):
             ret = decode_event(event)
             if ret:
-                rets.append(ret)
+                rets = f"{rets}{ret}"
             yield rets, session_id
     except Exception as e:
         raise gr.Error(f"There was an error contacting the agent backend: {str(e)}")

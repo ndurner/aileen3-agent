@@ -55,9 +55,7 @@ class ConditionalPrepAgent(BaseAgent):
             # We *must* forward its events so that ADK can apply the
             # output_key-based state update and, if desired, surface
             # the content in the transcript.
-            async for event in self._wrap_with_xml_markers(
-                self.briefing_agent.run_async(ctx)
-            ):
+            async for event in self.briefing_agent.run_async(ctx):
                 yield event
 
         # 2) On every invocation, normalize the latest user message.
@@ -76,35 +74,11 @@ class ConditionalPrepAgent(BaseAgent):
             state["latest_user_message"] = user_text
             # Forward message-fix events as well so its output_key
             # (`normalized_user_message`) is applied and visible.
-            async for event in self._wrap_with_xml_markers(
-                self.message_agent.run_async(ctx)
-            ):
+            async for event in self.message_agent.run_async(ctx):
                 yield event
 
         # If neither sub-agent produced events, this agent yields nothing.
 
-    # XML markers ensure that the Gradio frontend will not render stray
-    # agent outputs that were not intended to be passed on to the frontend
-    async def _wrap_with_xml_markers(
-        self,
-        events: AsyncGenerator[Event, None],
-    ) -> AsyncGenerator[Event, None]:
-        """Inject prefix/suffix markers into the first/last events."""
-        buffered_event: Event | None = None
-        first_event = True
-
-        async for event in events:
-            event = self._ensure_text_content(event)
-            if first_event:
-                self._prepend_text(event, _AGENT_OUTPUT_PREFIX)
-                first_event = False
-            if buffered_event is not None:
-                yield buffered_event
-            buffered_event = event
-
-        if buffered_event is not None:
-            self._append_text(buffered_event, _AGENT_OUTPUT_SUFFIX)
-            yield buffered_event
 
     def _ensure_text_content(self, event: Event) -> Event:
         """Guarantee the event has a mutable text content we can annotate."""

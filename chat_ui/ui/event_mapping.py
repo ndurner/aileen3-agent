@@ -43,4 +43,4 @@ def decode_event(event: dict) -> ChatMessage | None:
 
     if "text" in part:
         text = part["text"]
-        return ChatMessage(role="assistant", content=text)
+        return text

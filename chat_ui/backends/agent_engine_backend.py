@@ -46,4 +46,5 @@ class AgentEngineBackend(AgentBackend):
             session_id=session_id,
             message=message,
         ):
-            yield event
+            if self._is_displayable_event(event):
+                yield event

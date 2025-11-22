@@ -52,6 +52,7 @@ class ApiServerBackend(AgentBackend):
                 "role": "user",
                 "parts": [{"text": message}],
             },
+            "streaming": True
         }
 
         url = f"{self.config.base_url.rstrip('/')}/run_sse"
@@ -70,7 +71,10 @@ class ApiServerBackend(AgentBackend):
                         event = json.loads(data)
                     except json.JSONDecodeError:
                         continue
-                    yield event
+                    
+                    # Gate events so only the streaming assistant partials reach the UI.
+                    if self._is_displayable_event(event):
+                        yield event
 
     async def delete_session(
         self,
