@@ -5,10 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Module",
+            "name": "Gradio",
             "type": "debugpy",
             "request": "launch",
             "module": "chat_ui.main"
-        }
+        },
+        {
+            "name": "ADK API server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "agent_system.run_api_server",
+            "args": ["--log_level", "debug"]
+        },
     ]
 }
