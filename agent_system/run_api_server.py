@@ -10,6 +10,7 @@ logging plugin + agents directory automatically so the flag cannot be missed.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -20,6 +21,41 @@ except ImportError:  # pragma: no cover
 
 PLUGIN_SPEC = "agent_system.aileen3.logging_plugin.LoggingPlugin"
 AGENTS_DIR = Path(__file__).parent
+ROOT_DIR = AGENTS_DIR.parent
+
+
+def _load_env_file(env_path: Path) -> bool:
+    """Populate os.environ with variables from a dotenv-style file."""
+    if not env_path.exists():
+        return False
+
+    loaded_any = False
+    for raw_line in env_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.lower().startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key or key.startswith("#"):
+            continue
+        value = value.strip()
+        if value and len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        if key in os.environ:
+            continue
+        os.environ[key] = value
+        loaded_any = True
+    return loaded_any
+
+
+def _load_local_env() -> None:
+    """Load environment variables from the project .env file if available."""
+    env_path = ROOT_DIR / ".env"
+    _load_env_file(env_path)
 
 
 def _load_adk_entrypoint():
@@ -80,6 +116,7 @@ def _normalize_plugin_name(value: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _load_local_env()
     user_args = list(sys.argv[1:] if argv is None else argv)
     remaining_args, user_plugins = _consume_extra_plugins(user_args)
     merged_plugins = _dedupe_preserve_order([*user_plugins, PLUGIN_SPEC])
