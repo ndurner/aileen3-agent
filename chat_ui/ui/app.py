@@ -25,6 +25,7 @@ def _build_settings_accordion() -> tuple[
     gr.Textbox,
     gr.Textbox,
     gr.Textbox,
+    gr.Textbox,
     gr.State,
 ]:
     """
@@ -58,6 +59,11 @@ def _build_settings_accordion() -> tuple[
             label="Agent Engine Resource Name",
             value=_base_config.agent_engine.agent_engine_name if _base_config.agent_engine else "",
             placeholder="projects/../reasoningEngines/..",
+        )
+        vertex_api_key = gr.Textbox(
+            label="Vertex API Key (optional)",
+            type="password",
+            placeholder="Needed only when ADC/service account auth is unavailable",
         )
         default_user = gr.Textbox(
             label="Default User ID",
@@ -98,6 +104,7 @@ def _build_settings_accordion() -> tuple[
         project_id,
         location,
         ae_name,
+        vertex_api_key,
         default_user,
         media_url,
         context,
@@ -146,6 +153,7 @@ async def chat_fn(
     location: str,
     ae_name: str,
     default_user: str,
+    vertex_api_key: str,
     media_url: str,
     context: str,
     expectations: str,
@@ -166,6 +174,12 @@ async def chat_fn(
         "user_expectations": expectations or "",
         "user_prior_knowledge": prior_knowledge or "",
         "user_questions": questions or "",
+        "vertex_project_id": project_id or "",
+        "vertex_location": location or "",
+        "vertex_agent_engine_name": ae_name or "",
+        "vertex_api_key": vertex_api_key or "",
+        "app_name": api_app or "",
+        "default_user_id": default_user or "",
     }
 
     try:
@@ -235,6 +249,7 @@ def build_app() -> gr.Blocks:
             project_id,
             location,
             ae_name,
+            vertex_api_key,
             default_user,
             media_url,
             context,
@@ -272,6 +287,7 @@ def build_app() -> gr.Blocks:
                 location,
                 ae_name,
                 default_user,
+                vertex_api_key,
                 media_url,
                 context,
                 expectations,

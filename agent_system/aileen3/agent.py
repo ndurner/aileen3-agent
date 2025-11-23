@@ -2,6 +2,7 @@ from google.adk.agents.llm_agent import Agent, LlmAgent
 from google.adk.agents.sequential_agent import SequentialAgent
 
 from .conditional_prep_agent import ConditionalPrepAgent
+from .get_factual_memory_tool import get_factual_memory_tool
 
 
 assi_agent = Agent(
@@ -12,7 +13,7 @@ assi_agent = Agent(
 
 Use the briefing from the user and the refinements made to the same briefing by the [briefing_refinement_agent] to ground names, context, expectations, and questions. Treat empty blocks as not provided by the user.
 
-Refrain from answering user messages yourself.
+Call the `get_factual_memory` tool to enrich context beyond what the user supplied, including their profile data or prior knowledge.
 
 <original_user_briefing>
     <media_url>
@@ -32,6 +33,7 @@ Refrain from answering user messages yourself.
     </questions>
 </original_user_briefing>
 """,
+    tools=[get_factual_memory_tool],
 )
 
 
