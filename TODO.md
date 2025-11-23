@@ -1,0 +1,1 @@
+* consider LLM model choice Flash vs Pro
