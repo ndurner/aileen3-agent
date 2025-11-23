@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# run welcome README update when README.md changed
+if git diff --cached --name-only | grep -qxF README.md; then
+  python3 .github/generate_welcome_readme.py
+  git add .github/README_welcome.md
+fi
