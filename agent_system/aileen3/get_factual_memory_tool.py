@@ -182,10 +182,28 @@ async def get_factual_memory(
     query: str | None = None,
     tool_context: ToolContext | None = None,
 ) -> str:
-    """Retrieve factual memories from Vertex AI Memory Bank for this workspace.
+    """Retrieve factual memories from the AI Memory Bank for this app and user.
+
+    Use this tool when:
+      - you are preparing to analyze a new talk and want a baseline of what is already known
+        in this workspace about the domain, models, products or policies, or
+      - the user asks whether something is really new or has been said before.
+
+    The tool returns XML of the form:
+        <memory>
+          <fact>...</fact>
+          <fact>...</fact>
+          ...
+        </memory>
+
+    How to use the result:
+      - Treat these facts as priors and baseline knowledge for later analysis.
+      - You may quote or paraphrase relevant facts when answering the user.
+      - Absence of a fact does not prove that something is new, it only means
+        nothing has been stored in the memory bank.
 
     Args:
-        query: Optional filter text (currently unused)
+        query: Optional filter text (currently unused and may be left empty).
     """
 
     if tool_context is None:
