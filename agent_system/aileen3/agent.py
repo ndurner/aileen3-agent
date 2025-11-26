@@ -1,8 +1,10 @@
 import sys
 
 from google.adk.agents.llm_agent import Agent, LlmAgent
+from google.adk.agents.loop_agent import LoopAgent
 from google.adk.agents.sequential_agent import SequentialAgent
 
+from .assistant_loop_exit_agent import AssistantLoopExitAgent
 from .conditional_prep_agent import ConditionalPrepAgent
 from .get_factual_memory_tool import get_factual_memory_tool
 
@@ -26,27 +28,29 @@ aileen3_mcp_toolset = McpToolset(
             command=sys.executable,
             args=["-m", "aileen3_mcp.server"],
         ),
-        timeout=30.0,
+        timeout=1200.0,
     ),
     tool_filter=AILEEN3_MCP_TOOL_NAMES,
 )
 
 assi_agent = Agent(
-    model="gemini-2.5-flash-lite",
+    model="gemini-3-pro-preview",
     name="assistant_agent",
     description="A helpful assistant for user questions named `Aileen`.",
     instruction="""You are Aileen, an expectation driven briefing assistant for long form talks,
 webinars and conference sessions.
 
-Your job is to help the user forage for signal in noisy content:
+Consistent with the concept of Information Foraging, your job is to help the user forage for signal in noisy content:
 - highlight surprises relative to what the user already expects or knows
 - point out new actors, artefacts and dependencies that receive attention
 - answer the user's concrete questions using the analyzed media and factual memory.
 
-You have three main sources of prior information:
+The "noisy content" is supplied to you by the user, e.g. through the media_url.
+
+You have three main sources of prior information, in addition to the noisy content:
 1) The original user briefing.
 2) The refined briefing produced once per session by [briefing_refinement_agent].
-3) Factual memories from the Vertex AI Memory Bank via the `get_factual_memory` tool.
+3) Factual memories from the Vertex AI Memory Bank via the `get_factual_memory` function.
 
 Treat the Expectations and Prior knowledge blocks as the user's baseline script.
 Do not re-explain this baseline in detail unless the user asks.
@@ -54,17 +58,15 @@ Focus instead on deviations from it and on concrete, decision relevant details.
 
 When a media_url is present and the user asks you to analyze, summarize or brief them
 on that media, you should:
-    - ensure the media has been retrieved via the aileen3 MCP tools
-    (`start_media_retrieval` and `get_media_retrieval_status`)
-    - trigger `start_media_analysis` with a `priors` object built from the refined briefing
-    and any high confidence factual memories
-    - use `get_media_analysis_result` to obtain the analysis text
-    - base your answers on that analysis, plus the slides and priors, instead of guessing
-    from the URL or metadata alone.
+    1. retrieve the media via the `start_media_retrieval` tool
+    2. ensure that retrieval is complete by using the `get_media_retrieval_status` tool repeatedly until the status is confirmed as 'done'
+    3. use the `start_media_analysis` tool with a `priors` object built from the refined briefing and any high confidence factual memories
+    4. use `get_media_analysis_result` to obtain the analysis text (call repeatedly if status is not 'done')
+    5. formulate a response to the user. Base the response on the analysis from step #4, plus the slides and priors. Refrain from guessing from the URL or metadata alone.
 
-For follow-up questions:
-    - call the aileen3 `transcribe_video` once for the whole chat conversation; re-use its outputs
-    - ground these questions in this transcription
+For follow-up questions submitted by the user:
+    1. call the `transcribe_video` tool once for the whole chat conversation; re-use its outputs
+    2. formulate a response grounded this transcription
 
 Treat empty briefing blocks as “not provided by the user” and do not invent content for them.
 
@@ -85,11 +87,14 @@ Treat empty briefing blocks as “not provided by the user” and do not invent 
 {user_questions}
     </questions>
 </original_user_briefing>
+
+If you encounter an error while calling the tools or functions, report it to the user.
 """,
     tools=[
         get_factual_memory_tool,
         aileen3_mcp_toolset,
     ],
+    output_key="assistant_agent_response",
 )
 
 prep_agent = LlmAgent(
@@ -166,11 +171,24 @@ Desired return format:
     output_key="normalized_user_message",
 )
 
+assistant_loop_exit_agent = AssistantLoopExitAgent(
+    watched_agent_name=assi_agent.name,
+    response_state_key="assistant_agent_response",
+)
+
+assistant_loop = LoopAgent(
+    name="assistant_agent_loop",
+    sub_agents=[
+        assi_agent,
+        assistant_loop_exit_agent,
+    ],
+    max_iterations=8,
+)
 
 root_agent = SequentialAgent(
     name="root_agent",
     sub_agents=[
         ConditionalPrepAgent(briefing_agent=prep_agent, message_agent=message_fix_agent),
-        assi_agent,
+        assistant_loop,
     ],
 )
