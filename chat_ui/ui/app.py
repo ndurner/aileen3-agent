@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 import gradio as gr
 from gradio import ChatMessage
 
 from chat_ui.config import load_config, AppConfig, BackendKind, ApiServerConfig, AgentEngineConfig
 from chat_ui.backends import make_backend
-from .event_mapping import decode_event
+from .event_mapping import (
+    init_tool_display_state,
+    process_event as process_tool_event,
+    get_ordered_tool_messages,
+)
 
 _base_config = load_config()
 
@@ -159,14 +163,17 @@ async def chat_fn(
     expectations: str,
     prior_knowledge: str,
     questions: str,
-) -> Tuple[str, str]:
+) -> Tuple[Any, str | None]:
     config = _override_config(backend_kind, api_url, api_app, project_id, location, ae_name, default_user)
     active_backend = make_backend(config)
 
     user_text = str(message.content if isinstance(message, ChatMessage) else message)
 
     user_id = config.default_user_id
-    rets: str = ""
+
+    # Maintain per-turn state for tool thought messages and streaming text.
+    tool_state = init_tool_display_state()
+    answer_text_chunks: list[str] = []
 
     session_state_payload = {
         "user_media_url": media_url or "",
@@ -183,20 +190,51 @@ async def chat_fn(
     }
 
     try:
+        did_yield = False
         session_id = await active_backend.ensure_session(
             user_id=user_id,
             existing_session_id=session_id,
             session_state=session_state_payload,
         )
-        async for event in active_backend.stream_events(user_id=user_id, session_id=session_id, message=user_text):
-            ret = decode_event(event)
-            if ret:
-                rets = f"{rets}{ret}"
-            yield rets, session_id
+        async for event in active_backend.stream_events(
+            user_id=user_id,
+            session_id=session_id,
+            message=user_text,
+        ):
+            text_delta = process_tool_event(event, tool_state)
+            if isinstance(text_delta, str) and text_delta:
+                # Stream assistant text as it arrives.
+                answer_text_chunks.append(text_delta)
+
+            # Build the current assistant-side output for this turn:
+            # - one Gradio tool message per tool run (with emoji + status)
+            # - plus the natural-language answer text so far (if any).
+            tool_messages = get_ordered_tool_messages(tool_state)
+            answer_text = "".join(answer_text_chunks)
+
+            outputs: list[Any] = []
+            outputs.extend(tool_messages)
+            if answer_text:
+                outputs.append(answer_text)
+
+            if not outputs:
+                # Nothing user-visible yet for this event.
+                continue
+
+            if len(outputs) == 1:
+                yield outputs[0], session_id
+            else:
+                yield outputs, session_id
+            did_yield = True
     except Exception as e:
-        raise gr.Error(f"There was an error contacting the agent backend: {str(e)}")
-    
-    yield rets, session_id
+        # Show the underlying error message so that backend-originated
+        # messages (such as token limit errors) surface cleanly in the UI.
+        raise gr.Error(str(e))
+
+    # If the backend produced no visible events at all for this turn,
+    # return an empty assistant reply to avoid StopAsyncIteration errors.
+    if not did_yield:
+        yield "", session_id
 
 
 async def clear_session_fn(

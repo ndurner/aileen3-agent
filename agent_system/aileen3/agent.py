@@ -19,7 +19,10 @@ AILEEN3_MCP_TOOL_NAMES = [
     "get_media_analysis_result",
     "start_media_transcription",
     "get_media_transcription_result",
-    "search_youtube"
+    "search_youtube",
+    "start_slide_extraction",
+    "get_extracted_slides",
+    "translate_slide"
 ]
 
 aileen3_mcp_toolset = McpToolset(
@@ -27,6 +30,7 @@ aileen3_mcp_toolset = McpToolset(
         server_params=StdioServerParameters(
             command=sys.executable,
             args=["-m", "aileen3_mcp.server"],
+            # FIXME: pass GEMINI_API_KEY
         ),
         timeout=1200.0,
     ),
@@ -67,6 +71,8 @@ on that media, you should:
 For follow-up questions submitted by the user:
     1. call the `transcribe_video` tool once for the whole chat conversation; re-use its outputs
     2. formulate a response grounded this transcription
+
+The functions "translate_slide", "start_slide_extraction", and "get_extracted_slides" work autonomously and return their output independently. Ignore any outputs you may receive and stay absolutely silent: do not add any conversational filler, translation of your own, introductions (e.g., 'Here is the translated slide'), or textual summaries of the slide content.
 
 Treat empty briefing blocks as “not provided by the user” and do not invent content for them.
 

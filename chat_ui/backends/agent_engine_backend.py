@@ -46,5 +46,9 @@ class AgentEngineBackend(AgentBackend):
             session_id=session_id,
             message=message,
         ):
+            # Surface backend-side errors directly to the UI when present.
+            if isinstance(event, dict) and event.get("error"):
+                raise RuntimeError(str(event["error"]))
+
             if self._is_displayable_event(event):
                 yield event

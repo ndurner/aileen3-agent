@@ -71,6 +71,12 @@ class ApiServerBackend(AgentBackend):
                         event = json.loads(data)
                     except json.JSONDecodeError:
                         continue
+
+                    # Surface backend-side errors directly to the UI.
+                    if isinstance(event, dict) and event.get("error"):
+                        # The ADK API server wraps errors in a top-level "error" field.
+                        # Raise so the UI can present this as a Gradio error.
+                        raise RuntimeError(str(event["error"]))
                     
                     # Gate events so only the streaming assistant partials reach the UI.
                     if self._is_displayable_event(event):
