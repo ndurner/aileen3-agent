@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,6 +13,7 @@ from pydantic import BaseModel, Field
 import vertexai
 from vertexai import Client, types as vertex_types
 
+from env_support import get_env_value
 
 _STATE_KEY_PROJECT_ID = "vertex_project_id"
 _STATE_KEY_LOCATION = "vertex_location"
@@ -54,8 +54,9 @@ def _read_state_value(state: Any, key: str) -> str:
 
 def _env_lookup(options: tuple[str, ...]) -> str:
     for env_key in options:
-        if env_key in os.environ and os.environ[env_key].strip():
-            return os.environ[env_key].strip()
+        value = get_env_value(env_key)
+        if value:
+            return value
     return ""
 
 

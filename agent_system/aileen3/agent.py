@@ -12,6 +12,8 @@ from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 
+from env_support import get_env_value
+
 AILEEN3_MCP_TOOL_NAMES = [
     "start_media_retrieval",
     "get_media_retrieval_status",
@@ -25,12 +27,17 @@ AILEEN3_MCP_TOOL_NAMES = [
     "translate_slide"
 ]
 
+gemini_api_key = get_env_value("GEMINI_API_KEY")
+env_overrides = {}
+if gemini_api_key:
+    env_overrides["GEMINI_API_KEY"] = gemini_api_key
+
 aileen3_mcp_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
             command=sys.executable,
             args=["-m", "aileen3_mcp.server"],
-            # FIXME: pass GEMINI_API_KEY
+            env=env_overrides or None,
         ),
         timeout=1200.0,
     ),

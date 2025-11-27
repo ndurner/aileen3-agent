@@ -12,6 +12,8 @@ from typing import Any
 
 import vertexai
 
+from env_support import ensure_env_loaded
+
 
 DOMAIN_CLAIMS_TOPIC = {
     "custom_memory_topic": {
@@ -173,28 +175,6 @@ GENERATE_MEMORIES_EXAMPLES = [
 ]
 
 
-def load_env_file(env_path: Path) -> dict[str, str]:
-    """Load key=value pairs from .env and inject them into os.environ."""
-
-    values: dict[str, str] = {}
-    if not env_path.exists():
-        return values
-    for raw in env_path.read_text().splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if not key:
-            continue
-        os.environ.setdefault(key, value)
-        values[key] = value
-    return values
-
-
 def ensure_setting(value: str | None, *, flag: str, env_name: str) -> str:
     if value:
         return value
@@ -205,7 +185,7 @@ def ensure_setting(value: str | None, *, flag: str, env_name: str) -> str:
 
 
 def build_client(args: argparse.Namespace) -> tuple[vertexai.Client, str, str]:
-    load_env_file(Path(args.env_file))
+    ensure_env_loaded(env_path=Path(args.env_file))
     project = ensure_setting(args.project, flag="--project", env_name="VERTEX_PROJECT_ID")
     requested_location = args.location or os.environ.get("VERTEX_LOCATION")
     api_key = os.environ.get("VERTEX_API_KEY") or os.environ.get("GOOGLE_API_KEY")
