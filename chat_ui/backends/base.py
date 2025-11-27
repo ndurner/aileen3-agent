@@ -51,8 +51,14 @@ class AgentBackend(ABC):
         author = event.get("author")
         partial = event.get("partial")
 
-        # Streaming text partials from the assistant.
+        # Streaming text partials from the primary assistant.
         if author == "assistant_agent" and bool(partial):
+            return True
+
+        # Synthetic tool-like indicator for the briefing refinement agent:
+        # we forward all its events so the UI can emit a spinner-style
+        # message while it refines the user's inquiry.
+        if author == "briefing_refinement_agent":
             return True
 
         # Tool calls and tool responses, which may not be marked as partials.

@@ -390,6 +390,48 @@ def process_event(
         A text chunk (for the main assistant response) if this event carries
         user-visible text, otherwise None.
     """
+    author = event.get("author")
+
+    # --- Briefing refinement agent events ---------------------------------
+    # We treat these as a synthetic tool call so the UI can show a spinner
+    # while the refinement is running, without streaming its raw text.
+    if author == "briefing_refinement_agent":
+        key = "__briefing_refinement__"
+        msg = state.tools_by_key.get(key)
+        emoji = "👩🏻‍🏫"
+        label = "Refining and expanding inquiry"
+        title = f"{emoji} {label}"
+
+        if msg is None:
+            msg = ChatMessage(
+                role="assistant",
+                content="_Refining and expanding your inquiry..._",
+                metadata={
+                    "title": title,
+                    "status": "pending",
+                    "id": key,
+                },
+            )
+            state.tools_by_key[key] = msg
+            state.tool_order.append(key)
+        else:
+            if msg.metadata is None:
+                msg.metadata = {}
+            msg.metadata["title"] = title
+
+        # Mark as done when the refinement agent signals completion. ADK
+        # events typically carry finishReason when a stream ends; fall back
+        # to non-partial events as a completion signal.
+        finish_reason = event.get("finishReason")
+        partial = event.get("partial")
+        if finish_reason == "STOP" or (partial is None or partial is False):
+            msg.metadata["status"] = "done"
+        else:
+            msg.metadata["status"] = "pending"
+
+        # Never surface the refinement agent's own text chunks.
+        return None
+
     part = _first_part(event)
     if not part:
         return None
