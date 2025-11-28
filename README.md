@@ -14,6 +14,19 @@
     - the launcher automatically loads environment variables from `.env` so manual shells behave the same way as the VS Code launch config.
 2. Start Gradio web chat: `python -m chat_ui.main`
 
+## Docker
+
+The provided `Dockerfile` runs both the ADK API server and the Gradio UI (via `scripts/start_combined.sh`), making it deployable on Google Cloud Run and Hugging Face Spaces.
+
+To try the container locally:
+
+```
+docker build -t aileen3-agent .
+docker run --env-file .env -p 7860:7860 -p 8000:8000 aileen3-agent
+```
+
+Supplying `.env` (or equivalent `-e KEY=value` flags) is required so the agent can authenticate with Vertex / ADK; the launcher inside the container reads the same variables you provide at runtime. Port `7860` exposes the Gradio UI, while `8000` publishes the embedded API server for debugging.
+
 ## Memory Bank CLI
 
 A helper script in `tools/memory_bank_cli.py` automates Vertex AI Memory Bank
