@@ -3,5 +3,4 @@ httpx
 vertexai
 # Use patched ADK fork with Gemini 3 thought-signature preservation.
 google-adk @ git+https://github.com/ndurner/adk-python.git@fix/thought-signature-preservation
-# FIXME: figure out linking without leaking
-aileen3-mcp @ file://../aileen3-core/mcp
+aileen3-mcp @ git+https://github.com/ndurner/aileen3-core.git
