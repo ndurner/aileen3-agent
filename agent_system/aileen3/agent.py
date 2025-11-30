@@ -14,6 +14,7 @@ from mcp import StdioServerParameters
 
 from env_support import get_env_value
 
+# media tools ("Aileen 3 Core") tools allowlist
 AILEEN3_MCP_TOOL_NAMES = [
     "start_media_retrieval",
     "get_media_retrieval_status",
@@ -32,6 +33,7 @@ env_overrides = {}
 if gemini_api_key:
     env_overrides["GEMINI_API_KEY"] = gemini_api_key
 
+# establish Aileen 3 Core
 aileen3_mcp_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
@@ -44,6 +46,7 @@ aileen3_mcp_toolset = McpToolset(
     tool_filter=AILEEN3_MCP_TOOL_NAMES,
 )
 
+# core chat & analysis agent based on Gemini 3 Pro
 assi_agent = Agent(
     model="gemini-3-pro-preview",
     name="assistant_agent",
@@ -110,6 +113,7 @@ If you encounter an error while calling the tools or functions, report it to the
     output_key="assistant_agent_response",
 )
 
+# user briefing refinement agent
 prep_agent = LlmAgent(
     model="gemini-2.5-flash-lite",
     name="briefing_refinement_agent",
@@ -162,6 +166,7 @@ Desired output format:
     output_key="briefing_refined",
 )
 
+# user follow-up message normalizer and fixer agent
 message_fix_agent = LlmAgent(
     model="gemini-2.5-flash-lite",
     name="message_fix_agent",
@@ -184,11 +189,13 @@ Desired return format:
     output_key="normalized_user_message",
 )
 
+# core agent loop exist guard
 assistant_loop_exit_agent = AssistantLoopExitAgent(
     watched_agent_name=assi_agent.name,
     response_state_key="assistant_agent_response",
 )
 
+# core agent loop
 assistant_loop = LoopAgent(
     name="assistant_agent_loop",
     sub_agents=[
@@ -198,6 +205,7 @@ assistant_loop = LoopAgent(
     max_iterations=8,
 )
 
+# top-level agent (ADK entry point)
 root_agent = SequentialAgent(
     name="root_agent",
     sub_agents=[
