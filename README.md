@@ -1,6 +1,6 @@
 # Aileen 3 Agent: Expectation-Driven Information Foraging
 
-<div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 1em">
+<div align="center" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 1em">
 
 <a href="https://ndurner.de/links/aileen3-kaggle-video">
   <img alt="Agent demo video" src="https://img.shields.io/badge/YouTube-Demo%20video-red?logo=youtube">
@@ -12,6 +12,8 @@
   <img alt="Kaggle writeup" src="https://img.shields.io/badge/Kaggle-Writeup-lightblue?logo=kaggle">
 </a>
 </div>
+
+<br>
 
 > **"Information is surprises. You learn something when things don’t turn out the way you expected."** ⸺ Roger Schank
 
