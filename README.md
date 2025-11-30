@@ -65,6 +65,7 @@ This project implements the following agent concepts:
 *   Google Cloud Project with Vertex AI enabled
 *   Gemini API Key
 *   [Aileen 3 Core MCP](https://huggingface.co/spaces/MCP-1st-Birthday/aileen3-core/tree/main)
+*   [patched ADK](https://github.com/ndurner/adk-python) for Gemini 3 Pro compatibility
 
 ### 1. Environment Setup
 Copy the example environment and fill in your credentials:
