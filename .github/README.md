@@ -27,7 +27,7 @@ This repository contains the **Agentic Orchestration Layer** (`aileen3_agent`) b
 
 ## 🏗️ Architecture
 
-Aileen 3 represents a sophisticated multi-agent architecture using **Sequential**, **Loop**, and **LLM** agents, integrated with **Vertex AI Memory** and **MCP Tools**.
+Aileen 3 represents a multi-agent architecture using **Sequential**, **Loop**, and **LLM** agents, integrated with **Vertex AI Memory** and **MCP Tools**. The frontend is built with Gradio 6, exchanging messages and state with the agents either through ADK `api_server` or Vertex AI Agent Engine.
 
 ![Architecture diagram](../readme_assets/architecture-diagram.webp)
 
