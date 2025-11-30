@@ -268,6 +268,8 @@ async def clear_session_fn(
 
 def build_app() -> gr.Blocks:
     with gr.Blocks() as demo:
+        gr.Markdown("# Aileen 3 Agent")
+
         # Remove undo/redo buttons from chatbot
         gr.HTML("""
                 <style>
