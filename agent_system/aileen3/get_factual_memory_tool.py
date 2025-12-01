@@ -146,7 +146,11 @@ def _retrieve_memories(
 ) -> str:
     if settings.api_key:
         vertexai.init(project=settings.project, location=settings.location)
-        client = Client(api_key=settings.api_key)
+        client = Client(
+            api_key=settings.api_key,
+            project=settings.project,
+            location=settings.location,
+        )
     else:
         client = Client(project=settings.project, location=settings.location)
 
