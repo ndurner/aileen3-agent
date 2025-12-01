@@ -12,6 +12,12 @@ from typing import Any
 
 import vertexai
 
+# Ensure project root (where env_support.py lives) is importable when this file is
+# invoked as `python tools/memory_bank_cli.py` from the repo root.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from env_support import ensure_env_loaded
 
 
