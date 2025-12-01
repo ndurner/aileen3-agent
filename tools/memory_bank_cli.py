@@ -190,20 +190,15 @@ def build_client(args: argparse.Namespace) -> tuple[vertexai.Client, str, str]:
     requested_location = args.location or os.environ.get("VERTEX_LOCATION")
     api_key = os.environ.get("VERTEX_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if api_key:
-        # Express-mode API keys only support us-central1 today. Fall back and warn
-        # if the caller requested a different region so we stay in a supported state.
-        if requested_location and requested_location != "us-central1":
-            print(
-                "[memory-bank-cli] Vertex API keys currently only provision agent engines in us-central1. "
-                "Requested location '",
-                requested_location,
-                "' will be ignored.",
-                file=sys.stderr,
-                sep="",
+        # With API keys, the allowed region is tied to the key.
+        # Require an explicit location via flag or env so we don't guess.
+        if not requested_location:
+            raise SystemExit(
+                "Missing required setting for --location; set --location or "
+                "VERTEX_LOCATION in .env when using an API key."
             )
-        location = "us-central1"
-        vertexai.init(project=project, location=location)
-        return vertexai.Client(api_key=api_key), project, location
+        vertexai.init(project=project, location=requested_location)
+        return vertexai.Client(api_key=api_key), project, requested_location
 
     # ADC path: rely on user-provided project/location and default credentials.
     if not requested_location:
