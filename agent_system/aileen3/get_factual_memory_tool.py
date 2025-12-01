@@ -220,6 +220,11 @@ async def get_factual_memory(
         )
         return ret
     except Exception as exc:  # pragma: no cover - surfaced to the LLM/tool log
+        message = str(exc)
+        # If the Vertex endpoint/region is misconfigured (common during setup),
+        # fail soft and report no memories instead of crashing the whole flow.
+        if "location ID doesn't match the endpoint" in message or "INVALID_ARGUMENT" in message:
+            return '<memory isError="isError">Vertex AI Memory is not available or misconfigured; continuing without long-term memory.</memory>'
         raise RuntimeError(f"Vertex AI Memory lookup failed: {exc}") from exc
 
 
