@@ -145,6 +145,13 @@ class AssistantLoopExitAgent(BaseAgent):
         return "".join(texts)
 
     def _patch_missing_signatures(self, ctx: InvocationContext) -> int:
+        """Backfill missing thought_signature bytes on parts that contain function calls.
+
+        Some client stacks drop the signature on the Part while still allowing
+        safe execution when a dummy signature is present. We never touch the
+        FunctionCall model itself (it has no thought_signature field in
+        google-genai), only the surrounding Part.
+        """
         session = ctx.session
         if session is None or not session.events:
             return 0
@@ -161,14 +168,16 @@ class AssistantLoopExitAgent(BaseAgent):
                 function_call = getattr(part, "function_call", None)
                 if function_call is None:
                     continue
-                missing_call_sig = not getattr(
-                    function_call, "thought_signature", None
-                )
-                missing_part_sig = not getattr(part, "thought_signature", None)
-                if missing_call_sig or missing_part_sig:
-                    function_call.thought_signature = DUMMY_SIGNATURE
+                # google-genai defines thought_signature on Part, not FunctionCall.
+                existing = getattr(part, "thought_signature", None)
+                if existing:
+                    continue
+                try:
                     part.thought_signature = DUMMY_SIGNATURE.encode("utf-8")
                     patched += 1
+                except Exception:
+                    # If the SDK model rejects this field, fail soft.
+                    continue
         return patched
 
     def _has_text_response_since_last_user(
